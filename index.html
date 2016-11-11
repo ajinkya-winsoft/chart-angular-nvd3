@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<html>
+<head>
+    <title>Angular.js nvd3.js Line Chart Directive</title>
+    <meta http-equiv="content-type" content="text/html; charset=UTF8">
+    <script src="js/angular.js"></script>
+    <script src="js/d3.js"></script>
+    <script src="js/nv.d3.js"></script>
+    <script src="js/moment.js"></script>
+    <script src="angularjs-nvd3-directives.js"></script>
+    <link rel="stylesheet" href="stylesheets/nv.d3.css"/>
+    <script>
+        var app = angular.module("nvd3TestApp", ['nvd3ChartDirectives']);
+
+        function ExampleCtrl($scope, $interval, $log, $http){
+          
+
+            $scope.keys = [];
+            $scope.exampleData = [];
+            $scope.temp_data = [];
+            var first_init = true;
+            //var j=100;
+            var max=100;
+            $scope.calculateKeys = function () {
+                $scope.keys.push("foo");
+
+                $scope.exampleData.push({ "key": "foo", "values": [] });
+            };
+
+
+            $scope.xAxisTickFormatFunction = function(){
+                return function(d){
+                    if(d%7.5==0){
+                    console.log("format"+d)
+                    var t = new Date();
+                    //var diff_t = new Date(t - (60000*Math.ceil((500-(d+1))/100)));
+                    var diff_t = new Date(t - ((300-(d+1))*1000));
+                    //return diff_t.getHours()+":"+diff_t.getMinutes()+":"+diff_t.getSeconds();
+                   return d3.time.format("%H:%M:%S")(diff_t);
+                     //return d3.format(',d')(d);
+                 }
+                }
+            }
+
+              $scope.xAxisTickValuesFunction = function(){
+                return function(d){
+                    var tickVals = [];
+                    var values = d[0].values;
+                    
+                    var interestedTimeValuesArray = [0, 25, 50, 75, 100, 125, 150, 175, 200, 250, 300, 325, 330];
+                    for(var i in values){
+                      
+                        // if((values[i][0])%7.5==3){
+                        //     tickVals.push(values[i][0]);  
+                           
+                        // }
+              tickVals.push(values[i][0]);  
+                        // if(interestedTimeValuesArray.indexOf(values[i][0]) >= 0){
+                        //     tickVals.push(values[i][0]);
+                        // }
+                    }
+                  
+                    return tickVals;
+                };
+            };
+                 
+
+            $scope.x2AxisTickFormatFunction = function(){
+                return function(d){
+                    var t = new Date();
+                   //var diff_t = new Date(t - (60000*Math.ceil((300-(d+1)))));
+                    var diff_t = new Date(t - ((300-(d+1))*1000));
+                    //return diff_t.getHours()+":"+diff_t.getMinutes()+":"+diff_t.getSeconds();
+                    return d3.time.format("%H:%M:%S")(diff_t);
+                  
+                      
+
+                }
+            }
+
+            $scope.yAxisTickFormatFunction = function(){
+                return function(d){
+                    return d3.format(',d')(d);
+                }
+            };
+             $scope.y2AxisTickFormatFunction = function(){
+                return function(d){
+                    return "";
+                }
+            };
+             var MAX_POINTS = 300;
+             $scope.dataCounter = 0;
+             
+            //  $scope.fetchData = function(){
+              
+            //     clear();
+            //     if ($scope.keys.length === 0) {
+            //         $scope.calculateKeys();
+            //     }
+
+              
+
+            //    // $log.debug('setInterval counter is now at : ' + $scope.dataCounter);
+            //      if( $scope.dataCounter>=MAX_POINTS){
+            //          for(var i=0;i<MAX_POINTS-1;i++){
+            //             $scope.temp_data[i][1]=$scope.temp_data[i+1][1];
+            //          }  
+            //          $scope.temp_data[MAX_POINTS-1][1]=Math.floor((Math.random() * MAX_POINTS) + 1);
+            //      }else{
+            //             console.log("jalo me execute");
+            //         for(var i=0;i<=MAX_POINTS;i++){
+            //             $scope.temp_data.push([i, i%2?0:0.0001]) 
+            //               $scope.dataCounter = $scope.dataCounter + 1;
+            //         }
+            //     }
+            //      $scope.exampleData[0].values = $scope.temp_data;
+            //    // $log.debug('setInterval finished ', $scope.exampleData);   
+                   
+            // };
+
+            $scope.portDataMap = {};
+            $scope.labels = [];
+            $scope.series = [];
+            $scope.data = [];
+            var max_port = 4;
+            $scope.time=[];
+
+             $scope.fetchData = function(){
+              
+                clear();
+                if ($scope.keys.length === 0) {
+                   // $scope.calculateKeys();
+                }
+
+              
+
+               // $log.debug('setInterval counter is now at : ' + $scope.dataCounter);
+                 //if( $scope.dataCounter>=MAX_POINTS){
+
+                    $http({
+                    method: 'GET',
+                    url: "live-traffic.json",
+                    params: {
+                        "switchCode": "SC",//$scope.currentSwitch.switchCode,
+                        "selectedPorts": $scope.selectedPorts,
+                        "startTime": "2016-07-11T00:00:25",
+                        "endTime": "2016-07-11T00:00:25",
+                        'foobar': new Date().getTime()
+                    }
+                })
+                .success(function(result){
+                    var stats = result.data;
+
+                    var keys = [];
+                    $scope.series = [];
+                    $scope.data = [];
+
+                    //console.log(stats);
+                        
+                        if($scope.exampleData && first_init){
+                            for(var i=0;i<stats.length && i <5;i++){
+                                $scope.exampleData.push({ "key": stats[i].port, "values": [] });
+
+                            }
+                            //console.log($scope.exampleData);
+
+                            for(var i=0;i<stats.length && i <5;i++){
+                                for(var j=0;j<MAX_POINTS;j++){
+                                    $scope.exampleData[i].values.push([j, j%2?0:0.0001]) 
+                                    $scope.dataCounter = $scope.dataCounter + 1;
+                                   
+                                }
+                                //$scope.exampleData[i].values = $scope.temp_data;
+                               
+
+                            }
+
+                        
+                        
+                
+
+
+
+                            first_init = false;
+                            
+                        }else{
+                            //  for(var i=0;i<stats.length && i <2;i++){
+                            //     $scope.exampleData.push({ "key": stats[i].port, "values": [] });
+
+                            // }
+                           
+
+                                for(var i=0;i<stats.length && i <5;i++){
+                                    for(var j=0;j<MAX_POINTS-1;j++){
+                                        $scope.exampleData[i].values[j][1] = $scope.exampleData[i].values[j+1][1]
+                                         
+                                    }
+
+                                // $scope.exampleData[i].values[MAX_POINTS-1][1] = stats[i].ibytes;
+
+                                }
+                                //$scope.temp_data[i][1]=$scope.temp_data[i+1][1];
+                          
+
+                            for(var i=0;i<stats.length && i <5;i++){
+                                $scope.exampleData[i].values[MAX_POINTS-1][1] = stats[i].idiscards + Math.random();
+                             
+
+                            }
+                          
+                        }
+                       
+                    });
+
+                    // for (var i=0; i<stats.length && i <2 && i < 3; i++) {
+                    //     var key = ''+ stats[i].port;
+                    //     if ($scope.portDataMap[key]) {
+                    //         if ($scope.portDataMap[key].length >= max) {
+                    //             $scope.portDataMap[key] = $scope.portDataMap[stats[i].port].slice(1);
+                    //         }
+                    //     }
+                    //     else {
+                    //         $scope.portDataMap[key] = [];
+                    //         xAxes = [];
+                    //     }
+
+                    //     $scope.portDataMap[key].push(stats[i]);
+                    //     keys.push(key);
+
+                    //     $scope.series.push('Port #' + key);
+                    // }
+
+                //     if ($scope.labels.length > max-1) {
+                //         $scope.labels = $scope.labels.slice(1);
+                //     }
+
+                //     var d = new Date();
+                //     var time = d.getHours() + ':' + d.getMinutes() + ':' + d.getSeconds();
+                //     $scope.labels.push(time);
+                //     for(var i=0;i<MAX_POINTS-1;i++){
+                //         $scope.temp_data[i][1]=$scope.temp_data[i+1][1];
+                //      }
+        
+                //     for (var i=0; i < keys.length; i++) {
+                //         var data = $scope.portDataMap[keys[i]].map(function(d){return d.ibytes})[0];
+                //        //console.log($scope.exampleData);
+                //          $scope.temp_data[MAX_POINTS-1][1]=data;
+                //           $scope.exampleData[i].keys = keys[i];
+                //          $scope.exampleData[i].values = $scope.temp_data;
+                //     }
+                // });
+                  
+                //  }else{
+                      
+                //     for(var i=0;i<MAX_POINTS;i++){
+                //         $scope.temp_data.push([i, i%2?0:0.0001]) 
+                //           $scope.dataCounter = $scope.dataCounter + 1;
+                //     }
+                //     $scope.exampleData[0].values = $scope.temp_data;
+                // }
+                 
+               // $log.debug('setInterval finished ', $scope.exampleData);   
+                   
+            //}
+            };
+
+            clear = function(){
+                //$scope.dataCounter = 0;
+                $scope.keys = [];
+                //$scope.exampleData = [];
+
+               // $scope.calculateKeys();
+                
+            };
+                
+            $interval(function() {
+                  
+                    $scope.fetchData();
+                     //console.log( $scope.exampleData);
+                }, 1000,0);
+            
+            
+        }
+    </script>
+
+</head>
+<body ng-app='nvd3TestApp'>
+<!-- <div style="width:400px; height:600px"> -->
+<div ng-controller="ExampleCtrl" style="width:400px;height:250px">
+
+
+    <nvd3-line-with-focus-chart 
+            data="exampleData"
+            id="exampleId"
+            height="350"
+            height2="50"
+            margin="{left:30,top:10,bottom:30,right:0}"
+            margin2="{left:30,top:10,bottom:20,right:0}"
+	        showxaxis="false"
+	        showy2axis="false"
+            showyaxis="true"
+            yAxisTickFormat="yAxisTickFormatFunction()"
+            y2AxisTickFormat="y2AxisTickFormatFunction()"
+            xAxisTickFormat="xAxisTickFormatFunction()"
+            x2AxisTickFormat="x2AxisTickFormatFunction()"
+            width="400"
+            interactive="false"
+            legendupdatestate="true"
+            objectequality="true"
+            interpolate="basis-open"
+            config="{refreshDataOnly:true, deepWatchData: true}"
+            forceY="[0]"
+            showlegend="true"
+            xAxisTickValues="xAxisTickValuesFunction()"
+            xaxisshowmaxmin ="true"
+            xaxisrotatelabels ="-45"
+            useInteractiveGuidlene="true">
+         <svg></svg>
+    </nvd3-line-with-focus-chart>
+</div>
+<!-- </div> -->
+</body>
+</html>
